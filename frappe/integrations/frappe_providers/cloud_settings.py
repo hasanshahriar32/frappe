@@ -2,6 +2,7 @@
 created on Frappe Cloud / Atlas. The site talks to its bench's pilot admin over
 HTTP using a site-scoped token both written into site_config on site creation."""
 
+import re
 from urllib.parse import quote
 
 import frappe
@@ -9,6 +10,12 @@ from frappe import _
 from frappe.utils import cint
 
 CLOUD_SETTINGS_ROLE = "System Manager"
+
+# Site-scoped pilot routes the embed may reach through `pilot_request`.
+PILOT_PASSTHROUGH_ROUTES = {
+	"GET": (r"backups", r"backups/\d{8}_\d{6}/download-links"),
+	"POST": (r"backups",),
+}
 
 
 class CloudMigrationConflictError(frappe.ValidationError):
@@ -255,6 +262,21 @@ def update_apps(apps: str | None = None) -> dict:
 	from frappe.integrations.frappe_providers import cloud_marketplace
 
 	return cloud_marketplace.update(PilotClient(), apps)
+
+
+@frappe.whitelist(methods=["GET", "POST"])
+def pilot_request(method: str, path: str, data: str | dict | None = None):
+	"""Forward an allowlisted site-scoped request to pilot, so a new Cloud Settings
+	feature needs a pilot route and an entry in PILOT_PASSTHROUGH_ROUTES, not a
+	new method here."""
+	_assert_access()
+	method = (method or "").upper()
+	path = (path or "").strip("/")
+	if not any(re.fullmatch(route, path) for route in PILOT_PASSTHROUGH_ROUTES.get(method, ())):
+		frappe.throw(_("This request is not allowed."), frappe.PermissionError)
+
+	client = PilotClient()
+	return client._request(method, client.site_path(path), frappe.parse_json(data) if data else None)
 
 
 @frappe.whitelist(methods=["GET"])
