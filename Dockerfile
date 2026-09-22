@@ -10,8 +10,9 @@ COPY --chown=frappe:frappe . /home/frappe/frappe-bench/apps/frappe/
 
 USER frappe
 
-# Reinstall editable package without re-building C dependencies, compile all assets, sync assets
-RUN /home/frappe/frappe-bench/env/bin/pip install --no-deps --no-build-isolation -e /home/frappe/frappe-bench/apps/frappe \
+# Install flit_core build backend, install editable package, compile all assets, sync assets
+RUN /home/frappe/frappe-bench/env/bin/pip install --no-cache-dir flit_core \
+    && /home/frappe/frappe-bench/env/bin/pip install --no-deps --no-build-isolation -e /home/frappe/frappe-bench/apps/frappe \
     && bench build --app frappe --production \
     && python3 /home/frappe/frappe-bench/apps/frappe/scripts/sync_assets.py
 
