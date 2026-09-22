@@ -1,0 +1,16 @@
+.git
+.github
+*.pyc
+*.pyo
+*.pyd
+__pycache__
+.DS_Store
+.env*
+.vscode
+.idea
+temp/
+logs/
+sites/
+node_modules/
+docker-compose.yml
+Dockerfile
