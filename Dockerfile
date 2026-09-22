@@ -10,9 +10,10 @@ COPY --chown=frappe:frappe . /home/frappe/frappe-bench/apps/frappe/
 
 USER frappe
 
-# Install flit_core build backend, install editable package, compile all assets, sync assets
+# Install flit_core, editable install, update yarn dependencies for esbuild, build assets, and sync
 RUN /home/frappe/frappe-bench/env/bin/pip install --no-cache-dir flit_core \
     && /home/frappe/frappe-bench/env/bin/pip install --no-deps --no-build-isolation -e /home/frappe/frappe-bench/apps/frappe \
+    && yarn --cwd /home/frappe/frappe-bench/apps/frappe install --prefer-offline \
     && bench build --app frappe --production \
     && python3 /home/frappe/frappe-bench/apps/frappe/scripts/sync_assets.py
 
